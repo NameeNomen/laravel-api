@@ -17,4 +17,7 @@ class Produk extends Model
         'expiredDate',
         'rating',
     ];
+     public function image(){
+        return $this->hasMany(ProdukImage::class);
+    }
 }

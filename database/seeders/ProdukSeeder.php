@@ -20,7 +20,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 15000000,
                 'stok' => 5,
                 'kategori' => 'Aksesoris',
-                'rating' => 4.5,
+                'rating' => 4,
                 'created_at' => now(),
                 'updated_at' => now()
             ],
@@ -30,7 +30,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 200000,
                 'stok' => 20,
                 'kategori' => 'Aksesoris',
-                'rating' => 4.2,
+                'rating' => 4,
                 'created_at' => now(),
                 'updated_at' => now()
             ],
@@ -40,7 +40,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 500000,
                 'stok' => 15,
                 'kategori' => 'Aksesoris',
-                'rating' => 4.6,
+                'rating' => 4,
                 'created_at' => now(),
                 'updated_at' => now()
             ],
@@ -50,7 +50,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 2500000,
                 'stok' => 8,
                 'kategori' => 'Elektronik',
-                'rating' => 4.3,
+                'rating' => 4,
                 'created_at' => now(),
                 'updated_at' => now()
             ],
@@ -60,7 +60,7 @@ class ProdukSeeder extends Seeder
                 'harga' => 100000,
                 'stok' => 50,
                 'kategori' => 'Storage',
-                'rating' => 4.1,
+                'rating' => 4,
                 'created_at' => now(),
                 'updated_at' => now()
             ]

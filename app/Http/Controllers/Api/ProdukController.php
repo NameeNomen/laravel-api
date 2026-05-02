@@ -8,6 +8,10 @@ use App\Http\Resources\ProdukResource;
 use Illuminate\Http\Request;
 use App\Models\Produk;
 use Illuminate\Support\Facades\Storage;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
+use App\Models\ProdukImage;
+
 
 class ProdukController extends Controller
 {
@@ -77,10 +81,15 @@ class ProdukController extends Controller
             $file = $request->file('gambar');
 
             $filename = time().'_'.$file->getClientOriginalName();
+            $destinationPath = storage_path('app/public/produk/'.$filename);
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getRealPath());
 
-            $path = $file->storeAs('produk', $filename, 'public');
+            $image->scale(width: 800);
+            $image->save($destinationPath);
 
-            $data['gambar'] = $path;
+
+            $data['gambar'] = 'produk/'.$filename;
         }
 
         $produk = Produk::create($data);
@@ -120,11 +129,18 @@ class ProdukController extends Controller
             if ($produk->gambar) {
                 Storage::disk('public')->delete($produk->gambar);
             }
+            $file = $request->file('gambar');
+            
+            $filename = time().'_'.$file->getClientOriginalName();
+            $destinationPath = storage_path('app/public/produk/'.$filename);
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getRealPath());
+        if ($image->width() > 800) {
+            $image->scale(width: 800);
+        }
+        $image->save($destinationPath,quality:80);
 
-            // simpan gambar baru
-            $path = $request->file('gambar')->store('produk', 'public');
-
-            $data['gambar'] = $path;
+            $data['gambar'] = 'produk/'.$filename;
         }
 
         $produk->update($data);
@@ -151,4 +167,39 @@ class ProdukController extends Controller
             'message' => 'data berhasil dihapus'
         ]);
     }
+    public function uploadImages(Request $request, $id){
+        $produk = Produk::findOrFail($id);
+        $request->validate([
+            'gambar'=> 'required|array',
+            'gambar.*'=>'image|mimes:jpg,jpeg,png|max:2048'
+        ]);
+        $manager = new ImageManager(new Driver());
+        $images = [];
+        foreach ($request->file('gambar') as $file) {
+              $filename = time().'_'.$file->getClientOriginalName();
+            $destinationPath = storage_path('app/public/produk/'.$filename);
+            $manager = new ImageManager(new Driver());
+            $image = $manager->read($file->getRealPath());
+        
+        if ($image->width() > 800) {
+            
+            $image->scale(width: 800);
+        }
+        $image->save($destinationPath,quality:80);
+
+            $path = 'produk/'.$filename;
+            $img = ProdukImage::create([
+                'produk_id' => $produk->id,
+                'path'=>$path
+            ]);
+            $images[] = $img;
+        }
+
+             return response()->json([
+            'success' => true,
+            'message' => 'Multiple image berhasil di upload',
+            'data' => $images
+        ]);
+        
+    }   
 }

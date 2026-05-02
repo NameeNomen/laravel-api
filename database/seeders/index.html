@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Blast Nyebelin</title>
+    <style>
+        :root { --cell-size: 40px; }
+        body { background: #121212; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        h1 { margin-bottom: 5px; text-shadow: 0 0 10px #00e676; color: #00e676; }
+        p.julid { color: #888; font-size: 14px; margin-bottom: 20px; font-style: italic; }
+        
+        #game-container { position: relative; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+
+        /* Papan Utama 8x8 */
+        #papan { display: grid; grid-template-columns: repeat(8, var(--cell-size)); grid-template-rows: repeat(8, var(--cell-size)); gap: 3px; background: #2a2a2a; padding: 10px; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .cell { width: var(--cell-size); height: var(--cell-size); background: #3a3a3a; border-radius: 4px; transition: background-color 0.2s, box-shadow 0.2s; cursor: pointer; }
+        .cell.hovered { background: rgba(255, 255, 255, 0.2) !important; } /* Efek hover transparan */
+
+        /* Tempat Balok Tersedia (Tray) */
+        #tray-balok { display: flex; gap: 20px; min-height: 120px; align-items: center; justify-content: center; width: 100%; border-top: 2px solid #333; padding-top: 15px; }
+        .tray-slot { display: flex; align-items: center; justify-content: center; min-width: 100px; min-height: 100px; }
+        
+        /* Gaya Visual Balok */
+        .block { display: grid; gap: 2px; cursor: grab; transition: transform 0.2s; }
+        .block:hover { transform: scale(1.05); }
+        .block.selected { transform: scale(1.1); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); border-radius: 4px; opacity: 0.9; }
+        .block-cell { width: calc(var(--cell-size) - 2px); height: calc(var(--cell-size) - 2px); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>BLOCK BLAST</h1>
+    <p class="julid">Udah dibikinin suara nih. Jangan komplain lagi.</p>
+    
+    <div id="game-container">
+        <div id="papan"></div>
+        <div id="tray-balok">
+            <div class="tray-slot" id="slot-0"></div>
+            <div class="tray-slot" id="slot-1"></div>
+            <div class="tray-slot" id="slot-2"></div>
+        </div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 8;
+        const papanElement = document.getElementById('papan');
+        const traySlots = [document.getElementById('slot-0'), document.getElementById('slot-1'), document.getElementById('slot-2')];
+        
+        // Data Game State
+        let gameState = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(null));
+        let balokDiTray = [null, null, null];
+        let idBalokTerpilih = null;
+
+        // Definisi Bentuk Balok & Warna Neon
+        const SHAPES = [
+            { shape: [[0,0], [0,1], [1,0], [1,1]], color: '#00e676' }, // Kotak
+            { shape: [[0,0], [1,0], [2,0]],         color: '#2979ff' }, // Lurus 3
+            { shape: [[0,0], [0,1], [0,2], [0,3]], color: '#ff1744' }, // Lurus 4
+            { shape: [[0,0], [1,0], [1,1]],         color: '#ffff00' }, // L Kecil
+            { shape: [[0,0], [1,0], [2,0], [2,1]], color: '#d500f9' }, // L Gede
+            { shape: [[0,0], [1,0], [2,0], [0,1], [0,2]], color: '#00e5ff' }, // Siku Gede
+            { shape: [[0,0]],                      color: '#ff9100' }  // Titik
+        ];
+
+        function initGame() {
+            papanElement.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    
+                    cell.addEventListener('mouseover', () => handleBoardHover(r, c));
+                    cell.addEventListener('mouseout', handleBoardMouseOut);
+                    cell.addEventListener('click', () => handleBoardClick(r, c));
+                    
+                    papanElement.appendChild(cell);
+                }
+            }
+            regenerateTray();
+        }
+
+        function regenerateTray() {
+            balokDiTray = [null, null, null];
+            traySlots.forEach((slot, index) => {
+                slot.innerHTML = '';
+                const randomShapeData = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+                balokDiTray[index] = { ...randomShapeData, id: index };
+                renderBlockInTray(slot, balokDiTray[index]);
+            });
+        }
+
+        function renderBlockInTray(slot, blockData) {
+            const blockElement = document.createElement('div');
+            blockElement.classList.add('block');
+            blockElement.id = `block-data-${blockData.id}`;
+            blockElement.addEventListener('click', () => selectBlock(blockData.id));
+
+            let maxR = 0, maxC = 0;
+            blockData.shape.forEach(([r, c]) => { maxR = Math.max(maxR, r); maxC = Math.max(maxC, c); });
+
+            blockElement.style.gridTemplateRows = `repeat(${maxR + 1}, 1fr)`;
+            blockElement.style.gridTemplateColumns = `repeat(${maxC + 1}, 1fr)`;
+
+            blockData.shape.forEach(([r, c]) => {
+                const cell = document.createElement('div');
+                cell.classList.add('block-cell');
+                cell.style.backgroundColor = blockData.color;
+                cell.style.gridRow = r + 1;
+                cell.style.gridColumn = c + 1;
+                blockElement.appendChild(cell);
+            });
+            slot.appendChild(blockElement);
+        }
+
+        function selectBlock(index) {
+            document.querySelectorAll('.block').forEach(b => b.classList.remove('selected'));
+            if (idBalokTerpilih === index) {
+                idBalokTerpilih = null;
+            } else {
+                idBalokTerpilih = index;
+                document.getElementById(`block-data-${index}`).classList.add('selected');
+            }
+        }
+
+        function canPlaceBlock(r, c, blockData) {
+            for (let [dr, dc] of blockData.shape) {
+                const targetR = r + dr;
+                const targetC = c + dc;
+                if (targetR >= GRID_SIZE || targetC >= GRID_SIZE || targetR < 0 || targetC < 0 || gameState[targetR][targetC] !== null) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function handleBoardHover(r, c) {
+            handleBoardMouseOut();
+            if (idBalokTerpilih === null) return;
+            const blockData = balokDiTray[idBalokTerpilih];
+            if (!blockData) return;
+
+            const isValid = canPlaceBlock(r, c, blockData);
+
+            blockData.shape.forEach(([dr, dc]) => {
+                const targetR = r + dr;
+                const targetC = c + dc;
+                if (targetR < GRID_SIZE && targetC < GRID_SIZE && targetR >= 0 && targetC >= 0) {
+                    const cell = document.querySelector(`.cell[data-row="${targetR}"][data-col="${targetC}"]`);
+                    // Hanya kasih warna hover kalau kotak kosong
+                    if (gameState[targetR][targetC] === null) {
+                        cell.classList.add('hovered');
+                        if (!isValid) cell.style.backgroundColor = 'rgba(255, 0, 0, 0.5)'; // Merah kalau ga valid
+                    }
+                }
+            });
+        }
+
+        function handleBoardMouseOut() {
+            document.querySelectorAll('.cell').forEach(c => {
+                c.classList.remove('hovered');
+                // Balikin ke warna aslinya (entah itu warna balok atau warna abu-abu default)
+                const r = c.dataset.row;
+                const col = c.dataset.col;
+                if (gameState[r][col] === null) {
+                    c.style.backgroundColor = ''; 
+                } else {
+                    c.style.backgroundColor = gameState[r][col];
+                }
+            });
+        }
+
+        function handleBoardClick(r, c) {
+            if (idBalokTerpilih === null) return;
+            const blockData = balokDiTray[idBalokTerpilih];
+            if (!blockData) return;
+
+            if (canPlaceBlock(r, c, blockData)) {
+                // 1. Taruh balok, kunci warnanya
+                blockData.shape.forEach(([dr, dc]) => {
+                    const targetR = r + dr;
+                    const targetC = c + dc;
+                    gameState[targetR][targetC] = blockData.color;
+                    
+                    const cellElement = document.querySelector(`.cell[data-row="${targetR}"][data-col="${targetC}"]`);
+                    cellElement.style.backgroundColor = blockData.color; 
+                    cellElement.style.boxShadow = `inset 0 0 10px rgba(0,0,0,0.5), 0 0 5px ${blockData.color}`;
+                });
+
+                balokDiTray[idBalokTerpilih] = null;
+                traySlots[idBalokTerpilih].innerHTML = '';
+                idBalokTerpilih = null;
+                handleBoardMouseOut();
+
+                // 2. Cek Blast & Mainkan Suara
+                const linesCleared = checkAndClearLines();
+                if (linesCleared > 0) {
+                    playSound(linesCleared);
+                } else {
+                    // Suara kecil "klik" pas naruh blok biasa (opsional, biar ga sepi)
+                    playSound(0);
+                }
+
+                if (balokDiTray.every(b => b === null)) {
+                    regenerateTray();
+                }
+            } else {
+                // Goyangin papannya kalau salah naruh (visual cue)
+                papanElement.style.transform = 'translate(5px, 0)';
+                setTimeout(() => papanElement.style.transform = 'none', 100);
+            }
+        }
+
+        function checkAndClearLines() {
+            let rowsToClear = [];
+            let colsToClear = [];
+
+            // Cek Baris Penuh
+            for (let r = 0; r < GRID_SIZE; r++) {
+                if (gameState[r].every(cell => cell !== null)) rowsToClear.push(r);
+            }
+
+            // Cek Kolom Penuh
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let isFull = true;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (gameState[r][c] === null) { isFull = false; break; }
+                }
+                if (isFull) colsToClear.push(c);
+            }
+
+            // Hapus bloknya
+            rowsToClear.forEach(r => {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    gameState[r][c] = null;
+                    resetCell(r, c);
+                }
+            });
+
+            colsToClear.forEach(c => {
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    gameState[r][c] = null;
+                    resetCell(r, c);
+                }
+            });
+
+            // Return jumlah garis yang hancur (horizontal + vertikal)
+            return rowsToClear.length + colsToClear.length;
+        }
+
+        function resetCell(r, c) {
+            const cell = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+            cell.style.backgroundColor = '';
+            cell.style.boxShadow = '';
+        }
+
+        // --- SISTEM SUARA NGGAK NGOTAK ---
+        function playSound(lines) {
+            // Cek apakah browser support fitur ngomong
+            if (!('speechSynthesis' in window)) return;
+
+            let kata = "";
+            if (lines === 1) kata = "Nice";
+            else if (lines === 2) kata = "Good!";
+            else if (lines === 3) kata = "Great!";
+            else if (lines === 4) kata = "Awesome!";
+            else if (lines >= 5) kata = "Godlike!";
+            else if (lines === 0) kata = "pop"; // Simulasi suara kecil (dikomen aja kalau berisik)
+
+            if (kata === "pop") return; // Ga usah ngomong pop tiap naruh blok, berisik.
+
+            let speech = new SpeechSynthesisUtterance(kata);
+            speech.lang = 'en-US'; // Pake aksen bule biar keren
+            speech.rate = 1.3;     // Kecepatan ngomong
+            speech.pitch = 1.2;    // Nada suara agak tinggi
+            speech.volume = 1;     // Volume maksimal
+
+            window.speechSynthesis.speak(speech);
+        }
+
+        initGame();
+    </script>
+</body>
+</html>
