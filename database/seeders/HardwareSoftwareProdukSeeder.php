@@ -107,7 +107,7 @@ class HardwareSoftwareProdukSeeder extends Seeder
                 'harga' => rand(500000, 25000000),
                 'stok' => rand(5, 50),
                 'kategori' => 'Hardware',
-                'rating' => rand(40, 50) / 10,
+                'rating' => rand(40, 50),
                 'created_at' => now(),
                 'updated_at' => now()
             ];
@@ -123,7 +123,7 @@ class HardwareSoftwareProdukSeeder extends Seeder
                 'harga' => rand(200000, 8000000),
                 'stok' => rand(10, 100),
                 'kategori' => 'Software',
-                'rating' => rand(40, 50) / 10,
+                'rating' => rand(40, 50),
                 'created_at' => now(),
                 'updated_at' => now()
             ];
