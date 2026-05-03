@@ -22,7 +22,7 @@ class ProdukResource extends JsonResource
             'quantity' => $this->stok,
             'deskripsi' => $this->deskripsi,
             // 'gambar' => $this->kategori,
-            'gambar' => $this->gambar ? asset('storage/'.$this->gambar) : null,
+            'gambar' => $this->gambar ?? null,
             'expiredDate' => $this->expiredDate,
             'rating' => $this->rating,
             'created_at' => $this->created_at,

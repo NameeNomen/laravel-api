@@ -25,36 +25,40 @@ class StoreProdukRequest extends FormRequest
     public function rules(): array
     {
         // STORE
-        if ($this->isMethod('post') && !$this->has('_method')) {
-            return [
-                'kode_barang' => 'required|string|unique:produks,kode_barang',
-                'nama_barang' => 'required|string|max:255',
-                'harga' => 'required|numeric|min:0',
-                'deskripsi' => 'nullable|string',
-                'stok' => 'required|numeric|min:0',
-                'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-                'kategori' => 'required|string',
-                'expiredDate' => 'nullable|date',
-                'rating' => 'nullable|numeric|min:0|max:5',
-            ];
-        }
-
-        // UPDATE
+      public function rules(): array
+{
+    // STORE (POST TANPA _method)
+    if ($this->isMethod('post') && !$this->has('_method')) {
         return [
-            'kode_barang' => [
-                'sometimes',
-                'string',
-                Rule::unique('produks', 'kode_barang')->ignore($this->route('id'))
-            ],
-            'nama_barang' => 'sometimes|string|max:255',
-            'harga' => 'sometimes|numeric|min:0',
+            'kode_barang' => 'required|string|unique:produks,kode_barang',
+            'nama_barang' => 'required|string|max:255',
+            'harga' => 'required|numeric|min:0',
             'deskripsi' => 'nullable|string',
-            'stok' => 'sometimes|numeric|min:0',
+            'stok' => 'required|numeric|min:0',
             'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'kategori' => 'sometimes|string',
+            'kategori' => 'required|string',
             'expiredDate' => 'nullable|date',
             'rating' => 'nullable|numeric|min:0|max:5',
         ];
+    }
+
+    // UPDATE
+    return [
+        'kode_barang' => [
+            'sometimes',
+            'string',
+            Rule::unique('produks', 'kode_barang')->ignore($this->route('id'))
+        ],
+        'nama_barang' => 'sometimes|string|max:255',
+        'harga' => 'sometimes|numeric|min:0',
+        'deskripsi' => 'nullable|string',
+        'stok' => 'sometimes|numeric|min:0',
+        'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        'kategori' => 'sometimes|string',
+        'expiredDate' => 'nullable|date',
+        'rating' => 'nullable|numeric|min:0|max:5',
+    ];
+}
     }
 
     protected function failedValidation(Validator $validator)
