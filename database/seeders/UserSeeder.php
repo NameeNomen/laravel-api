@@ -22,19 +22,19 @@ class UserSeeder extends Seeder
                 'updated_at' => now()
             ],
             [
-                'name' => 'Admin User',
-                'email' => 'admin@example.com',
+                'name' => 'Fatimah',
+                'email' => 'fat@example.com',
                 'email_verified_at' => now(),
-                'password' => Hash::make('admin123'),
+                'password' => Hash::make('fatimah'),
                 'remember_token' => Str::random(10),
                 'created_at' => now(),
                 'updated_at' => now()
             ],
             [
-                'name' => 'Developer User',
-                'email' => 'dev@example.com',
+                'name' => 'Siti',
+                'email' => 'sit@example.com',
                 'email_verified_at' => now(),
-                'password' => Hash::make('developer'),
+                'password' => Hash::make('sitiiii'),
                 'remember_token' => Str::random(10),
                 'created_at' => now(),
                 'updated_at' => now()
