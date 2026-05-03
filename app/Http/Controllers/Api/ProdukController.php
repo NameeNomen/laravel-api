@@ -18,8 +18,10 @@ class ProdukController extends Controller
         $query = Produk::query();
 
         if ($request->search) {
-            $query->where('nama_barang', 'like', "%{$request->search}%")
+            $query->where(function ($q) use ($request) {
+                $q->where('nama_barang', 'like', "%{$request->search}%")
                   ->orWhere('kode_barang', 'like', "%{$request->search}%");
+            });
         }
 
         if ($request->kategori) {
@@ -55,21 +57,28 @@ class ProdukController extends Controller
             $file = $request->file('gambar');
 
             if ($file && $file->isValid()) {
+                try {
+                    $manager = new ImageManager(new Driver());
+                    $image = $manager->read($file->getRealPath());
 
-                $manager = new ImageManager(new Driver());
-                $image = $manager->read($file->getRealPath());
+                    if ($image->width() > 800) {
+                        $image->scale(width: 800);
+                    }
 
-                if ($image->width() > 800) {
-                    $image->scale(width: 800);
+                    $encoded = (string) $image->encode('jpg', 80);
+
+                    $result = cloudinary()->upload($encoded);
+
+                    if ($result) {
+                        $data['gambar'] = $result->getSecurePath();
+                    }
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload gambar gagal',
+                        'error' => $e->getMessage()
+                    ], 500);
                 }
-
-                $encoded = (string) $image->encode();
-
-                $url = cloudinary()
-                    ->upload($encoded)
-                    ->getSecurePath();
-
-                $data['gambar'] = $url;
             }
         }
 
@@ -97,25 +106,33 @@ class ProdukController extends Controller
         $produk = Produk::findOrFail($id);
         $data = $request->validated();
 
+        // HANDLE GAMBAR
         if ($request->hasFile('gambar')) {
             $file = $request->file('gambar');
 
             if ($file && $file->isValid()) {
+                try {
+                    $manager = new ImageManager(new Driver());
+                    $image = $manager->read($file->getRealPath());
 
-                $manager = new ImageManager(new Driver());
-                $image = $manager->read($file->getRealPath());
+                    if ($image->width() > 800) {
+                        $image->scale(width: 800);
+                    }
 
-                if ($image->width() > 800) {
-                    $image->scale(width: 800);
+                    $encoded = (string) $image->encode('jpg', 80);
+
+                    $result = cloudinary()->upload($encoded);
+
+                    if ($result) {
+                        $data['gambar'] = $result->getSecurePath();
+                    }
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload gambar gagal',
+                        'error' => $e->getMessage()
+                    ], 500);
                 }
-
-                $encoded = (string) $image->encode();
-
-                $url = cloudinary()
-                    ->upload($encoded)
-                    ->getSecurePath();
-
-                $data['gambar'] = $url;
             }
         }
 
@@ -152,27 +169,33 @@ class ProdukController extends Controller
         $images = [];
 
         foreach ($request->file('gambar') as $file) {
-
             if ($file && $file->isValid()) {
+                try {
+                    $image = $manager->read($file->getRealPath());
 
-                $image = $manager->read($file->getRealPath());
+                    if ($image->width() > 800) {
+                        $image->scale(width: 800);
+                    }
 
-                if ($image->width() > 800) {
-                    $image->scale(width: 800);
+                    $encoded = (string) $image->encode('jpg', 80);
+
+                    $result = cloudinary()->upload($encoded);
+
+                    if ($result) {
+                        $img = ProdukImage::create([
+                            'produk_id' => $produk->id,
+                            'path' => $result->getSecurePath()
+                        ]);
+
+                        $images[] = $img;
+                    }
+                } catch (\Exception $e) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Upload multiple gagal',
+                        'error' => $e->getMessage()
+                    ], 500);
                 }
-
-                $encoded = (string) $image->encode();
-
-                $url = cloudinary()
-                    ->upload($encoded)
-                    ->getSecurePath();
-
-                $img = ProdukImage::create([
-                    'produk_id' => $produk->id,
-                    'path' => $url
-                ]);
-
-                $images[] = $img;
             }
         }
 
