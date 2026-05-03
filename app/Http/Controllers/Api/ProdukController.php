@@ -10,6 +10,7 @@ use App\Models\Produk;
 use App\Models\ProdukImage;
 use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\Encoders\JpegEncoder;
 
 class ProdukController extends Controller
 {
@@ -177,7 +178,7 @@ class ProdukController extends Controller
                         $image->scale(width: 800);
                     }
 
-                    $encoded = (string) $image->encode('jpg', 80);
+                   $encoded = (string) $image->encode(new JpegEncoder(quality: 80));
 
                     $result = cloudinary()->upload($encoded);
 
