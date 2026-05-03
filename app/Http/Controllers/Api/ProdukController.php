@@ -66,7 +66,7 @@ class ProdukController extends Controller
                         $image->scale(width: 800);
                     }
 
-                    $encoded = (string) $image->encode('jpg', 80);
+                    $encoded = (string) $image->encode(new JpegEncoder(quality: 80));
 
                     $result = cloudinary()->upload($encoded);
 
@@ -120,7 +120,7 @@ class ProdukController extends Controller
                         $image->scale(width: 800);
                     }
 
-                    $encoded = (string) $image->encode('jpg', 80);
+                    $encoded = (string) $image->encode(new JpegEncoder(quality: 80));
 
                     $result = cloudinary()->upload($encoded);
 
