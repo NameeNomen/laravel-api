@@ -24,7 +24,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ProdukSeeder::class,
             HardwareSoftwareProdukSeeder::class,
-            UserSeeder::class
+            // UserSeeder::class
         ]);
     }
 }
