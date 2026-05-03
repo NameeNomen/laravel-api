@@ -17,25 +17,19 @@ class ProdukController extends Controller
     {
         $query = Produk::query();
 
-        if ($request->has('search')) {
-            $search = $request->search;
-
-            $query->where('nama_barang', 'like', "%{$search}%")
-                ->orWhere('kode_barang', 'like', "%{$search}%");
+        if ($request->search) {
+            $query->where('nama_barang', 'like', "%{$request->search}%")
+                  ->orWhere('kode_barang', 'like', "%{$request->search}%");
         }
 
-        if ($request->has('kategori')) {
+        if ($request->kategori) {
             $query->where('kategori', $request->kategori);
         }
 
-        if ($request->has('sort')) {
-            if ($request->sort == 'harga_asc') {
-                $query->orderBy('harga', 'asc');
-            }
-
-            if ($request->sort == 'harga_desc') {
-                $query->orderBy('harga', 'desc');
-            }
+        if ($request->sort == 'harga_asc') {
+            $query->orderBy('harga', 'asc');
+        } elseif ($request->sort == 'harga_desc') {
+            $query->orderBy('harga', 'desc');
         } else {
             $query->latest();
         }
@@ -44,19 +38,10 @@ class ProdukController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'List Produk',
             'data' => ProdukResource::collection($produk),
             'pagination' => [
                 'current_page' => $produk->currentPage(),
                 'last_page' => $produk->lastPage(),
-                'per_page' => $produk->perPage(),
-                'total' => $produk->total(),
-                'first_page_url' => $produk->url(1),
-                'last_page_url' => $produk->url($produk->lastPage()),
-                'next_page_url' => $produk->nextPageUrl(),
-                'prev_page_url' => $produk->previousPageUrl(),
-                'from' => $produk->firstItem(),
-                'to' => $produk->lastItem()
             ]
         ]);
     }
@@ -65,24 +50,27 @@ class ProdukController extends Controller
     {
         $data = $request->validated();
 
+        // HANDLE GAMBAR
         if ($request->hasFile('gambar')) {
-
             $file = $request->file('gambar');
 
-            $manager = new ImageManager(new Driver());
-            $image = $manager->read($file->getRealPath());
+            if ($file && $file->isValid()) {
 
-            if ($image->width() > 800) {
-                $image->scale(width: 800);
+                $manager = new ImageManager(new Driver());
+                $image = $manager->read($file->getRealPath());
+
+                if ($image->width() > 800) {
+                    $image->scale(width: 800);
+                }
+
+                $encoded = (string) $image->encode();
+
+                $url = cloudinary()
+                    ->upload($encoded)
+                    ->getSecurePath();
+
+                $data['gambar'] = $url;
             }
-
-            $encoded = (string) $image->encode();
-
-            $url = cloudinary()
-                ->upload($encoded)
-                ->getSecurePath();
-
-            $data['gambar'] = $url;
         }
 
         $produk = Produk::create($data);
@@ -110,23 +98,25 @@ class ProdukController extends Controller
         $data = $request->validated();
 
         if ($request->hasFile('gambar')) {
-
             $file = $request->file('gambar');
 
-            $manager = new ImageManager(new Driver());
-            $image = $manager->read($file->getRealPath());
+            if ($file && $file->isValid()) {
 
-            if ($image->width() > 800) {
-                $image->scale(width: 800);
+                $manager = new ImageManager(new Driver());
+                $image = $manager->read($file->getRealPath());
+
+                if ($image->width() > 800) {
+                    $image->scale(width: 800);
+                }
+
+                $encoded = (string) $image->encode();
+
+                $url = cloudinary()
+                    ->upload($encoded)
+                    ->getSecurePath();
+
+                $data['gambar'] = $url;
             }
-
-            $encoded = (string) $image->encode();
-
-            $url = cloudinary()
-                ->upload($encoded)
-                ->getSecurePath();
-
-            $data['gambar'] = $url;
         }
 
         $produk->update($data);
@@ -141,13 +131,11 @@ class ProdukController extends Controller
     public function destroy($id)
     {
         $produk = Produk::findOrFail($id);
-
-        // optional: hapus dari cloudinary (ribet, skip dulu)
         $produk->delete();
 
         return response()->json([
             'success' => true,
-            'message' => 'Data berhasil dihapus'
+            'message' => 'Produk berhasil dihapus'
         ]);
     }
 
@@ -165,24 +153,27 @@ class ProdukController extends Controller
 
         foreach ($request->file('gambar') as $file) {
 
-            $image = $manager->read($file->getRealPath());
+            if ($file && $file->isValid()) {
 
-            if ($image->width() > 800) {
-                $image->scale(width: 800);
+                $image = $manager->read($file->getRealPath());
+
+                if ($image->width() > 800) {
+                    $image->scale(width: 800);
+                }
+
+                $encoded = (string) $image->encode();
+
+                $url = cloudinary()
+                    ->upload($encoded)
+                    ->getSecurePath();
+
+                $img = ProdukImage::create([
+                    'produk_id' => $produk->id,
+                    'path' => $url
+                ]);
+
+                $images[] = $img;
             }
-
-            $encoded = (string) $image->encode();
-
-            $url = cloudinary()
-                ->upload($encoded)
-                ->getSecurePath();
-
-            $img = ProdukImage::create([
-                'produk_id' => $produk->id,
-                'path' => $url
-            ]);
-
-            $images[] = $img;
         }
 
         return response()->json([
