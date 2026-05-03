@@ -13,10 +13,10 @@ class UserSeeder extends Seeder
     {
         User::insert([
             [
-                'name' => 'Test User',
-                'email' => 'test@example.com',
+                'name' => 'NameeNomen',
+                'email' => 'Nomen@example.com',
                 'email_verified_at' => now(),
-                'password' => Hash::make('password'),
+                'password' => Hash::make('NameeNomen'),
                 'remember_token' => Str::random(10),
                 'created_at' => now(),
                 'updated_at' => now()
