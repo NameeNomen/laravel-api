@@ -22,9 +22,7 @@ class StoreProdukRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
-    {
-        // STORE
+    // STORE
       public function rules(): array
 {
     // STORE (POST TANPA _method)
@@ -72,4 +70,4 @@ class StoreProdukRequest extends FormRequest
             )
         );
     }
-}
+
